@@ -1,0 +1,1404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SciStack — Scientific Calculators</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:      #f7f8fa;
+  --bg2:     #eef0f4;
+  --bg3:     #e2e5ec;
+  --panel:   #ffffff;
+  --text:    #111318;
+  --text2:   #5c6070;
+  --border:  rgba(0,0,0,0.08);
+  --accent:  #2563eb;
+  --accent2: #0ea5e9;
+  --alight:  rgba(37,99,235,0.09);
+  --math:    #7c3aed;
+  --phys:    #0284c7;
+  --chem:    #059669;
+  --bio:     #dc2626;
+}
+
+html.dark {
+  --bg:      #0e1117;
+  --bg2:     #161b25;
+  --bg3:     #1e2535;
+  --panel:   #161b25;
+  --text:    #e8eaf0;
+  --text2:   #7a7f90;
+  --border:  rgba(255,255,255,0.07);
+  --accent:  #3b82f6;
+  --alight:  rgba(59,130,246,0.12);
+}
+
+body {
+  font-family: 'IBM Plex Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+  transition: background 0.2s, color 0.2s;
+}
+
+/* ── SIDEBAR ── */
+.sidebar {
+  width: 224px;
+  min-width: 224px;
+  background: var(--bg2);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.sidebar-logo {
+  padding: 20px 18px 15px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.logo-name {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--accent);
+  letter-spacing: -0.5px;
+}
+
+.logo-sub {
+  font-size: 10.5px;
+  color: var(--text2);
+  margin-top: 3px;
+}
+
+.nav-group { padding: 10px 0 4px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+.nav-group:last-of-type { border-bottom: none; }
+
+.nav-group-label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--text2);
+  padding: 3px 16px 8px;
+}
+
+.group-pip {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 16px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--text2);
+  cursor: pointer;
+  border-left: 2px solid transparent;
+  transition: color 0.12s, background 0.12s, border-color 0.12s;
+  user-select: none;
+  line-height: 1.3;
+}
+
+.nav-item:hover { color: var(--text); background: var(--bg3); }
+
+.nav-item.active {
+  color: var(--accent);
+  background: var(--alight);
+  border-left-color: var(--accent);
+}
+
+.sidebar-footer {
+  margin-top: auto;
+  padding: 13px 16px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.dark-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 11px;
+  color: var(--text2);
+  user-select: none;
+}
+
+.toggle-track {
+  width: 30px; height: 16px;
+  border-radius: 8px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  position: relative;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+
+.toggle-track.on { background: var(--accent); border-color: var(--accent); }
+
+.toggle-knob {
+  width: 11px; height: 11px;
+  border-radius: 50%;
+  background: #fff;
+  position: absolute;
+  top: 2px; left: 2px;
+  transition: transform 0.2s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.toggle-track.on .toggle-knob { transform: translateX(14px); }
+
+/* ── MAIN ── */
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 0;
+}
+
+.topbar {
+  padding: 14px 24px;
+  border-bottom: 1px solid var(--border);
+  background: var(--panel);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-shrink: 0;
+}
+
+.page-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 3px 9px;
+  border-radius: 20px;
+  margin-bottom: 5px;
+}
+
+.page-title { font-size: 16px; font-weight: 500; color: var(--text); }
+.page-desc  { font-size: 11px; color: var(--text2); margin-top: 2px; }
+
+.gh-link {
+  display: flex; align-items: center; gap: 6px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  padding: 7px 13px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text2);
+  text-decoration: none;
+  white-space: nowrap; flex-shrink: 0;
+  transition: border-color 0.15s, color 0.15s;
+  background: var(--bg);
+}
+
+.gh-link:hover { border-color: var(--accent); color: var(--accent); }
+
+.content-area {
+  flex: 1;
+  overflow-y: auto;
+  padding: 22px 24px;
+  scrollbar-width: thin;
+  background: var(--bg);
+}
+
+.calc-section { display: none; }
+.calc-section.active { display: block; }
+
+/* ── METRICS ── */
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.metric {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 13px 15px;
+}
+
+.metric-label { font-size: 10px; font-weight: 500; color: var(--text2); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 5px; }
+.metric-value { font-family: 'IBM Plex Mono', monospace; font-size: 20px; font-weight: 500; color: var(--text); line-height: 1.1; word-break: break-all; }
+.metric-value.accent { color: var(--accent); }
+.metric-value.math   { color: var(--math); }
+.metric-value.phys   { color: var(--phys); }
+.metric-value.chem   { color: var(--chem); }
+.metric-value.bio    { color: var(--bio); }
+.metric-value.danger { color: #dc2626; }
+
+/* ── CONTROLS ── */
+.controls {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px 26px;
+  margin-bottom: 20px;
+}
+
+.control-group { display: flex; flex-direction: column; gap: 6px; }
+
+.control-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11.5px;
+  color: var(--text2);
+}
+
+.control-label span:last-child {
+  font-family: 'IBM Plex Mono', monospace;
+  font-weight: 500;
+  color: var(--text);
+}
+
+input[type="range"] {
+  width: 100%; height: 4px;
+  -webkit-appearance: none; appearance: none;
+  background: var(--bg3); border-radius: 2px;
+  outline: none; cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2.5px solid var(--bg);
+  box-shadow: 0 0 0 1.5px var(--accent);
+  cursor: pointer;
+}
+
+input[type="number"], input[type="text"], select, textarea {
+  width: 100%;
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--text);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+input[type="number"]:focus, input[type="text"]:focus, select:focus, textarea:focus {
+  border-color: var(--accent);
+}
+
+textarea { resize: vertical; min-height: 60px; line-height: 1.5; }
+
+/* ── CHART ── */
+.chart-wrap {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-bottom: 14px;
+}
+
+.chart-title {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text2);
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  margin-bottom: 12px;
+}
+
+/* ── FORMULA ── */
+.formula {
+  padding: 10px 14px;
+  background: var(--alight);
+  border-left: 3px solid var(--accent);
+  border-radius: 0 8px 8px 0;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11.5px;
+  color: var(--text2);
+  line-height: 1.7;
+}
+
+.formula strong { color: var(--accent); font-weight: 600; }
+
+/* ── RESULT BOX ── */
+.result-box {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  color: var(--text);
+  line-height: 1.8;
+  margin-bottom: 14px;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+/* ── UNIT CONVERTER TABS ── */
+.unit-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.unit-tab {
+  padding: 5px 12px;
+  font-size: 11.5px;
+  font-weight: 500;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  cursor: pointer;
+  background: var(--panel);
+  color: var(--text2);
+  transition: all 0.12s;
+}
+
+.unit-tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+.unit-tab:hover:not(.active) { border-color: var(--accent); color: var(--accent); }
+
+/* ── SHAPES ── */
+.shape-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
+.shape-tab {
+  padding: 5px 12px; font-size: 11.5px; font-weight: 500;
+  border: 1px solid var(--border); border-radius: 20px;
+  cursor: pointer; background: var(--panel); color: var(--text2);
+  transition: all 0.12s;
+}
+.shape-tab.active { background: var(--math); color: #fff; border-color: var(--math); }
+.shape-tab:hover:not(.active) { border-color: var(--math); color: var(--math); }
+
+/* ── STAT DATA AREA ── */
+.stat-input-wrap { margin-bottom: 16px; }
+.stat-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; min-height: 32px; }
+.stat-chip {
+  display: flex; align-items: center; gap: 5px;
+  padding: 3px 9px;
+  background: var(--alight);
+  border: 1px solid rgba(37,99,235,0.2);
+  border-radius: 20px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11.5px;
+  color: var(--accent);
+}
+.stat-chip button { background: none; border: none; color: var(--accent); cursor: pointer; font-size: 13px; line-height: 1; padding: 0 0 0 2px; }
+
+.btn { padding: 7px 14px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg2); color: var(--text); font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; cursor: pointer; transition: all 0.12s; }
+.btn:hover { border-color: var(--accent); color: var(--accent); }
+.btn-row { display: flex; gap: 8px; margin-top: 10px; }
+
+/* ── STATUS ── */
+.status-bar {
+  padding: 8px 24px;
+  border-top: 1px solid var(--border);
+  background: var(--panel);
+  display: flex; align-items: center; gap: 12px;
+  font-size: 10.5px; color: var(--text2);
+  flex-shrink: 0;
+}
+
+.status-dot { width: 6px; height: 6px; border-radius: 50%; background: #22c55e; display: inline-block; margin-right: 4px; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 700px) {
+  .sidebar { width: 52px; min-width: 52px; }
+  .sidebar-logo, .nav-group-label, .sidebar-footer span, .logo-sub { display: none; }
+  .nav-item { padding: 10px; justify-content: center; }
+  .nav-item span:last-child { display: none; }
+  .controls { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-name">SciStack</div>
+    <div class="logo-sub">16 scientific calculators</div>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-group-label"><span class="group-pip" style="background:var(--math)"></span>Math</div>
+    <div class="nav-item active" data-calc="quadratic">Quadratic Solver</div>
+    <div class="nav-item" data-calc="stats">Statistics</div>
+    <div class="nav-item" data-calc="geometry">Geometry</div>
+    <div class="nav-item" data-calc="trig">Trigonometry</div>
+    <div class="nav-item" data-calc="units">Unit Converter</div>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-group-label"><span class="group-pip" style="background:var(--phys)"></span>Physics</div>
+    <div class="nav-item" data-calc="kinematics">Kinematics</div>
+    <div class="nav-item" data-calc="projectile">Projectile Motion</div>
+    <div class="nav-item" data-calc="force">Force / Newton</div>
+    <div class="nav-item" data-calc="energy">Energy & Work</div>
+    <div class="nav-item" data-calc="ohm">Ohm's Law</div>
+    <div class="nav-item" data-calc="waves">Waves</div>
+    <div class="nav-item" data-calc="gas">Ideal Gas Law</div>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-group-label"><span class="group-pip" style="background:var(--chem)"></span>Chemistry</div>
+    <div class="nav-item" data-calc="molarity">Molarity</div>
+    <div class="nav-item" data-calc="ph">pH Calculator</div>
+    <div class="nav-item" data-calc="halflife">Half-Life</div>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-group-label"><span class="group-pip" style="background:var(--bio)"></span>Biology</div>
+    <div class="nav-item" data-calc="population">Population Growth</div>
+  </div>
+
+  <div class="sidebar-footer">
+    <div class="dark-toggle" id="darkToggle">
+      <div class="toggle-track" id="toggleTrack"><div class="toggle-knob"></div></div>
+      <span>dark</span>
+    </div>
+    <span style="font-size:10px;color:var(--text2)">MIT</span>
+  </div>
+</nav>
+
+<div class="main">
+  <div class="topbar">
+    <div>
+      <div class="page-badge" id="pageBadge" style="background:rgba(124,58,237,0.1);color:var(--math)">Math</div>
+      <div class="page-title" id="pageTitle">Quadratic Solver</div>
+      <div class="page-desc"  id="pageDesc">find roots of ax² + bx + c = 0, real and complex</div>
+    </div>
+    <a class="gh-link" href="https://github.com/yourusername/scistack" target="_blank">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+      SciStack
+    </a>
+  </div>
+
+  <div class="content-area" id="contentArea">
+
+    <!-- 1. QUADRATIC -->
+    <section class="calc-section active" id="calc-quadratic">
+      <div class="metrics">
+        <div class="metric"><div class="metric-label">Root x₁</div><div class="metric-value math" id="q-x1">—</div></div>
+        <div class="metric"><div class="metric-label">Root x₂</div><div class="metric-value math" id="q-x2">—</div></div>
+        <div class="metric"><div class="metric-label">Discriminant</div><div class="metric-value" id="q-disc">—</div></div>
+        <div class="metric"><div class="metric-label">Vertex</div><div class="metric-value" id="q-vertex">—</div></div>
+      </div>
+      <div class="controls">
+        <div class="control-group"><div class="control-label"><span>a (x² coefficient)</span></div><input type="number" id="q-a" value="1" step="any"></div>
+        <div class="control-group"><div class="control-label"><span>b (x coefficient)</span></div><input type="number" id="q-b" value="-5" step="any"></div>
+        <div class="control-group"><div class="control-label"><span>c (constant)</span></div><input type="number" id="q-c" value="6" step="any"></div>
+      </div>
+      <div class="chart-wrap">
+        <div class="chart-title">Parabola y = ax² + bx + c</div>
+        <div style="position:relative;height:230px"><canvas id="chart-quadratic"></canvas></div>
+      </div>
+      <div class="formula"><strong>x = (−b ± √(b²−4ac)) / 2a</strong>  ·  Discriminant &gt; 0: two real roots  ·  = 0: one root  ·  &lt; 0: complex roots</div>
+    </section>
+
+    <!-- 2. STATISTICS -->
+    <section class="calc-section" id="calc-stats">
+      <div class="metrics">
+        <div class="metric"><div class="metric-label">Mean</div><div class="metric-value math" id="st-mean">—</div></div>
+        <div class="metric"><div class="metric-label">Median</div><div class="metric-value math" id="st-median">—</div></div>
+        <div class="metric"><div class="metric-label">Std Dev (σ)</div><div class="metric-value" id="st-std">—</div></div>
+        <div class="metric"><div class="metric-label">Variance</div><div class="metric-value" id="st-var">—</div></div>
+        <div class="metric"><div class="metric-label">Min</div><div class="metric-value" id="st-min">—</div></div>
+        <div class="metric"><div class="metric-label">Max</div><div class="metric-value" id="st-max">—</div></div>
+      </div>
+      <div class="stat-input-wrap">
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input type="number" id="st-input" placeholder="enter a number, press Add or Enter" step="any" style="flex:1">
+          <button class="btn" id="st-add">Add</button>
+          <button class="btn" id="st-clear">Clear</button>
+        </div>
+        <div class="stat-chips" id="st-chips"></div>
+      </div>
+      <div class="chart-wrap">
+        <div class="chart-title">Distribution (sorted)</div>
+        <div style="position:relative;height:200px"><canvas id="chart-stats"></canvas></div>
+      </div>
+      <div class="formula">n = <strong id="st-n">0</strong> values  ·  Range = <strong id="st-range">—</strong>  ·  Mode = <strong id="st-mode">—</strong></div>
+    </section>
+
+    <!-- 3. GEOMETRY -->
+    <section class="calc-section" id="calc-geometry">
+      <div class="shape-tabs" id="shapeTabs">
+        <div class="shape-tab active" data-shape="circle">Circle</div>
+        <div class="shape-tab" data-shape="rect">Rectangle</div>
+        <div class="shape-tab" data-shape="triangle">Triangle</div>
+        <div class="shape-tab" data-shape="sphere">Sphere</div>
+        <div class="shape-tab" data-shape="cylinder">Cylinder</div>
+        <div class="shape-tab" data-shape="cone">Cone</div>
+        <div class="shape-tab" data-shape="cube">Cube</div>
+      </div>
+      <div class="metrics">
+        <div class="metric"><div class="metric-label" id="geo-l1">Area</div><div class="metric-value math" id="geo-v1">—</div></div>
+        <div class="metric"><div class="metric-label" id="geo-l2">Perimeter</div><div class="metric-value math" id="geo-v2">—</div></div>
+        <div class="metric"><div class="metric-label" id="geo-l3">Volume</div><div class="metric-value" id="geo-v3">—</div></div>
+      </div>
+      <div id="geo-inputs" class="controls"></div>
+      <div class="formula" id="geo-formula"></div>
+    </section>
+
+    <!-- 4. TRIG -->
+    <section class="calc-section" id="calc-trig">
+      <div class="metrics">
+        <div class="metric"><div class="metric-label">sin θ</div><div class="metric-value math" id="tr-sin">—</div></div>
+        <div class="metric"><div class="metric-label">cos θ</div><div class="metric-value math" id="tr-cos">—</div></div>
+        <div class="metric"><div class="metric-label">tan θ</div><div class="metric-value math" id="tr-tan">—</div></div>
+        <div class="metric"><div class="metric-label">θ in radians</div><div class="metric-value" id="tr-rad">—</div></div>
+      </div>
+      <div class="controls">
+        <div class="control-group">
+          <div class="control-label"><span>Angle θ</span><span id="tr-ang-val">45°</span></div>
+          <input type="range" id="tr-ang" min="0" max="360" step="1" value="45">
+        </div>
+        <div class="control-group">
+          <div class="control-label"><span>Mode</span></div>
+          <select id="tr-mode">
+            <option value="deg">Degrees</option>
+            <option value="rad">Radians</option>
+          </select>
+        </div>
+      </div>
+      <div class="chart-wrap">
+        <div class="chart-title">sin, cos, tan over 0–360°</div>
+        <div style="position:relative;height:210px"><canvas id="chart-trig"></canvas></div>
+      </div>
+      <div class="formula">Law of cosines: <strong>c² = a² + b² − 2ab·cos(C)</strong>  ·  Law of sines: <strong>a/sin A = b/sin B = c/sin C</strong></div>
+    </section>
+
+    <!-- 5. UNIT CONVERTER -->
+    <section class="calc-section" id="calc-units">
+      <div class="unit-tabs" id="unitTabs">
+        <div class="unit-tab active" data-utype="length">Length</div>
+        <div class="unit-tab" data-utype="mass">Mass</div>
+        <div class="unit-tab" data-utype="temp">Temperature</div>
+        <div class="unit-tab" data-utype="speed">Speed</div>
+        <div class="unit-tab" data-utype="energy">Energy</div>
+        <div class="unit-tab" data-utype="pressure">Pressure</div>
+      </div>
+      <div class="controls" style="grid-template-columns:1fr 1fr 1fr;gap:10px 16px;margin-bottom:16px">
+        <div class="control-group"><div class="control-label"><span>Value</span></div><input type="number" id="uc-val" value="1" step="any"></div>
+        <div class="control-group"><div class="control-label"><span>From</span></div><select id="uc-from"></select></div>
+        <div class="control-group"><div class="control-label"><span>To</span></div><select id="uc-to"></select></div>
+      </div>
+      <div class="result-box" id="uc-result">—</div>
+      <div class="chart-wrap">
+        <div class="chart-title">Conversion scale (common values)</div>
+        <div style="position:relative;height:200px"><canvas id="chart-units"></canvas></div>
+      </div>
+    </section>
+
+    <!-- 6. KINEMATICS -->
+    <section class="calc-section" id="calc-kinematics">
+      <div class="metrics">
+        <div class="metric"><div class="metric-label">Displacement (s)</div><div class="metric-value phys" id="kin-s">—</div></div>
+        <div class="metric"><div class="metric-label">Final velocity (v)</div><div class="metric-value phys" id="kin-v">—</div></div>
+        <div class="metric"><div class="metric-label">Time (t)</div><div class="metric-value" id="kin-t">—</div></div>
+      </div>
+      <div class="controls">
+        <div class="control-group"><div class="control-label"><span>Initial velocity u (m/s)</span><span id="kin-u-val">0 m/s</span></div><input type="range" id="kin-u" min="0" max="100" step="1" value="0"></div>
+        <div class="control-group"><div class="control-label"><span>Acceleration a (m/s²)</span><span id="kin-a-val">9.8 m/s²</span></div><input type="range" id="kin-a" min="-20" max="50" step="0.1" value="9.8"></div>
+        <div class="control-group"><div class="control-label"><span>Time t (s)</span><span id="kin-t-val">5 s</span></div><input type="range" id="kin-t" min="0.1" max="30" step="0.1" value="5"></div>
+      </div>
+      <div class="chart-wrap">
+        <div class="chart-title">Position over time</div>
+        <div style="position:relative;height:210px"><canvas id="chart-kinematics"></canvas></div>
+      </div>
+      <div class="formula"><strong>v = u + at</strong>  ·  <strong>s = ut + ½at²</strong>  ·  <strong>v² = u² + 2as</strong></div>
+    </section>
+
+    <!-- 7. PROJECTILE -->
+    <section class="calc-section" id="calc-projectile">
+      <div class="metrics">
+        <div class="metric"><div class="metric-label">Max Range</div><div class="metric-value phys" id="pr-range">—</div></div>
+        <div class="metric"><div class="metric-label">Max Height</div><div class="metric-value phys" id="pr-height">—</div></div>
+        <div class="metric"><div class="metric-label">Flight Time</div><div class="metric-value" id="pr-time">—</div></div>
+        <div class="metric"><div class="metric-label">Optimal Angle</div><div class="metric-value" id="pr-opt">45°</div></div>
+      </div>
+      <div class="controls">
+        <div class="control-group"><div class="control-label"><span>Launch speed (m/s)</span><span id="pr-v-val">30 m/s</span></div><input type="range" id="pr-v" min="1" max="200" step="1" value="30"></div>
+        <div class="control-group"><div class="control-label"><span>Launch angle (°)</span><span id="pr-ang-val">45°</span></div><input type="range" id="pr-ang" min="1" max="89" step="1" value="45"></div>
+        <div class="control-group"><div class="control-label"><span>Gravity (m/s²)</span><span id="pr-g-val">9.81 m/s²</span></div><input type="range" id="pr-g" min="1" max="25" step="0.01" value="9.81"></div>
+      </div>
+      <div class="chart-wrap">
+        <div class="chart-title">Trajectory</div>
+        <div style="position:relative;height:210px"><canvas id="chart-projectile"></canvas></div>
+      </div>
+      <div class="formula">Range: <strong>R = v²sin(2θ)/g</strong>  ·  Max height: <strong>H = v²sin²θ/2g</strong>  ·  Time: <strong>T = 2v·sinθ/g</strong></div>
+    </section>
+
+    <!-- 8. FORCE -->
+    <section class="calc-section" id="calc-force">
+      <div class="metrics">
+        <div class="metric"><div class="metric-label">Net Force (N)</div><div class="metric-value phys" id="fo-f">—</div></div>
+        <div class="metric"><div class="metric-label">Acceleration (m/s²)</div><div class="metric-value phys" id="fo-a">—</div></div>
+        <div class="metric"><div class="metric-label">Friction Force (N)</div><div class="metric-value" id="fo-ff">—</div></div>
+      </div>
+      <div class="controls">
+        <div class="control-group"><div class="control-label"><span>Mass (kg)</span><span id="fo-m-val">10 kg</span></div><input type="range" id="fo-m" min="0.1" max="1000" step="0.1" value="10"></div>
+        <div class="control-group"><div class="control-label"><span>Applied force (N)</span><span id="fo-fa-val">50 N</span></div><input type="range" id="fo-fa" min="0" max="5000" step="1" value="50"></div>
+        <div class="control-group"><div class="control-label"><span>Friction coeff μ</span><span id="fo-mu-val">0.3</span></div><input type="range" id="fo-mu" min="0" max="1.5" step="0.01" value="0.3"></div>
+        <div class="control-group"><div class="control-label"><span>Incline angle (°)</span><span id="fo-ang-val">0°</span></div><input type="range" id="fo-ang" min="0" max="89" step="1" value="0"></div>
+      </div>
+      <div class="chart-wrap">
+        <div class="chart-title">Force vs mass (at current settings)</div>
+        <div style="position:relative;height:200px"><canvas id="chart-force"></canvas></div>
+      </div>
+      <div class="formula"><strong>F = ma</strong>  ·  Friction: <strong>f = μN</strong>  ·  Normal on incline: <strong>N = mg·cosθ</strong>  ·  Gravity component: <strong>mg·sinθ</strong></div>
+    </section>
+
+    <!-- 9. ENERGY -->
+    <section class="calc-section" id="calc-energy">
+      <div class="metrics">
+        <div class="metric"><div class="metric-label">Kinetic Energy</div><div class="metric-value phys" id="en-ke">—</div></div>
+        <div class="metric"><div class="metric-label">Potential Energy</div><div class="metric-value phys" id="en-pe">—</div></div>
+        <div class="metric"><div class="metric-label">Work Done</div><div class="metric-value" id="en-w">—</div></div>
+        <div class="metric"><div class="metric-label">Power</div><div class="metric-value" id="en-p">—</div></div>
+      </div>
+      <div class="controls">
+        <div class="control-group"><div class="control-label"><span>Mass (kg)</span><span id="en-m-val">10 kg</span></div><input type="range" id="en-m" min="0.1" max="1000" step="0.1" value="10"></div>
+        <div class="control-group"><div class="control-label"><span>Velocity (m/s)</span><span id="en-v-val">5 m/s</span></div><input type="range" id="en-v" min="0" max="100" step="0.5" value="5"></div>
+        <div class="control-group"><div class="control-label"><span>Height (m)</span><span id="en-h-val">10 m</span></div><input type="range" id="en-h" min="0" max="1000" step="1" value="10"></div>
+        <div class="control-group"><div class="control-label"><span>Time (s)</span><span id="en-t-val">5 s</span></div><input type="range" id="en-t" min="0.1" max="60" step="0.1" value="5"></div>
+      </div>
+      <div class="chart-wrap">
+        <div class="chart-title">KE and PE at varying heights (same object)</div>
+        <div style="position:relative;height:200px"><canvas id="chart-energy"></canvas></div>
+      </div>
+      <div class="formula"><strong>KE = ½mv²</strong>  ·  <strong>PE = mgh</strong>  ·  <strong>W = F·d</strong>  ·  <strong>P = W/t</strong>  ·  g = 9.81 m/s²</div>
+    </section>
+
+    <!-- 10. OHM -->
+    <section class="calc-section" id="calc-ohm">
+      <div class="metrics">
+        <div class="metric"><div class="metric-label">Voltage (V)</div><div class="metric-value phys" id="oh-v">—</div></div>
+        <div class="metric"><div class="metric-label">Current (A)</div><div class="metric-value phys" id="oh-i">—</div></div>
+        <div class="metric"><div class="metric-label">Resistance (Ω)</div><div class="metric-value" id="oh-r">—</div></div>
+        <div class="metric"><div class="metric-label">Power (W)</div><div class="metric-value" id="oh-p">—</div></div>
+      </div>
+      <div class="controls">
+        <div class="control-group"><div class="control-label"><span>Voltage V (volts)</span><span id="oh-v-val">12 V</span></div><input type="range" id="oh-vv" min="0.1" max="240" step="0.1" value="12"></div>
+        <div class="control-group"><div class="control-label"><span>Resistance R (Ω)</span><span id="oh-r-val">10 Ω</span></div><input type="range" id="oh-rv" min="0.1" max="1000" step="0.1" value="10"></div>
+      </div>
+      <div class="chart-wrap">
+        <div class="chart-title">Current vs resistance (at fixed voltage)</div>
+        <div style="position:relative;height:210px"><canvas id="chart-ohm"></canvas></div>
+      </div>
+      <div class="formula"><strong>V = IR</strong>  ·  <strong>P = IV = V²/R = I²R</strong>  ·  Series: R_total = R₁+R₂  ·  Parallel: 1/R = 1/R₁+1/R₂</div>
+    </section>
+
+    <!-- 11. WAVES -->
+    <section class="calc-section" id="calc-waves">
+      <div class="metrics">
+        <div class="metric"><div class="metric-label">Frequency (Hz)</div><div class="metric-value phys" id="wv-f">—</div></div>
+        <div class="metric"><div class="metric-label">Wavelength (m)</div><div class="metric-value phys" id="wv-lam">—</div></div>
+        <div class="metric"><div class="metric-label">Period (s)</div><div class="metric-value" id="wv-T">—</div></div>
+        <div class="metric"><div class="metric-label">Wave speed (m/s)</div><div class="metric-value" id="wv-spd">—</div></div>
+      </div>
+      <div class="controls">
+        <div class="control-group"><div class="control-label"><span>Frequency (Hz)</span><span id="wv-f-val">440 Hz</span></div><input type="range" id="wv-fv" min="1" max="20000" step="1" value="440"></div>
+        <div class="control-group"><div class="control-label"><span>Wave speed (m/s)</span><span id="wv-s-val">343 m/s</span></div><input type="range" id="wv-sv" min="1" max="343000" step="1" value="343"></div>
+        <div class="control-group"><div class="control-label"><span>Amplitude</span><span id="wv-a-val">1.0</span></div><input type="range" id="wv-av" min="0.1" max="3" step="0.1" value="1"></div>
+      </div>
+      <div class="chart-wrap">
+        <div class="chart-title">Wave profile y = A·sin(2πx/λ)</div>
+        <div style="position:relative;height:200px"><canvas id="chart-waves"></canvas></div>
+      </div>
+      <div class="formula"><strong>v = fλ</strong>  ·  <strong>T = 1/f</strong>  ·  Sound in air ≈ 343 m/s  ·  Light = 3×10⁸ m/s</div>
+    </section>
+
+    <!-- 12. IDEAL GAS -->
+    <section class="calc-section" id="calc-gas">
+      <div class="metrics">
+        <div class="metric"><div class="metric-label">Pressure (Pa)</div><div class="metric-value phys" id="gas-p">—</div></div>
+        <div class="metric"><div class="metric-label">Volume (m³)</div><div class="metric-value phys" id="gas-v">—</div></div>
+        <div class="metric"><div class="metric-label">Temperature (K)</div><div class="metric-value" id="gas-t">—</div></div>
+        <div class="metric"><div class="metric-label">Moles (n)</div><div class="metric-value" id="gas-n">—</div></div>
+      </div>
+      <div class="controls">
+        <div class="control-group"><div class="control-label"><span>Pressure (kPa)</span><span id="gas-pv-val">101.3 kPa</span></div><input type="range" id="gas-pv" min="1" max="1000" step="0.1" value="101.3"></div>
+        <div class="control-group"><div class="control-label"><span>Volume (L)</span><span id="gas-vv-val">22.4 L</span></div><input type="range" id="gas-vv" min="0.1" max="1000" step="0.1" value="22.4"></div>
+        <div class="control-group"><div class="control-label"><span>Moles (n)</span><span id="gas-nv-val">1 mol</span></div><input type="range" id="gas-nv" min="0.01" max="100" step="0.01" value="1"></div>
+      </div>
+      <div class="chart-wrap">
+        <div class="chart-title">Pressure vs volume (isothermal — Boyle's Law)</div>
+        <div style="position:relative;height:200px"><canvas id="chart-gas"></canvas></div>
+      </div>
+      <div class="formula"><strong>PV = nRT</strong>  ·  R = 8.314 J/(mol·K)  ·  STP: 0°C, 101.325 kPa  ·  T(K) = T(°C) + 273.15</div>
+    </section>
+
+    <!-- 13. MOLARITY -->
+    <section class="calc-section" id="calc-molarity">
+      <div class="metrics">
+        <div class="metric"><div class="metric-label">Molarity (M)</div><div class="metric-value chem" id="mol-m">—</div></div>
+        <div class="metric"><div class="metric-label">Moles</div><div class="metric-value chem" id="mol-n">—</div></div>
+        <div class="metric"><div class="metric-label">Diluted conc (M)</div><div class="metric-value" id="mol-dil">—</div></div>
+      </div>
+      <div class="controls">
+        <div class="control-group"><div class="control-label"><span>Moles of solute</span><span id="mol-nv-val">0.5 mol</span></div><input type="range" id="mol-nv" min="0.001" max="10" step="0.001" value="0.5"></div>
+        <div class="control-group"><div class="control-label"><span>Volume of solution (L)</span><span id="mol-vv-val">1.0 L</span></div><input type="range" id="mol-vv" min="0.01" max="10" step="0.01" value="1"></div>
+        <div class="control-group"><div class="control-label"><span>Dilution volume (L)</span><span id="mol-dv-val">2.0 L</span></div><input type="range" id="mol-dv" min="0.1" max="20" step="0.1" value="2"></div>
+      </div>
+      <div class="chart-wrap">
+        <div class="chart-title">Concentration vs volume</div>
+        <div style="position:relative;height:200px"><canvas id="chart-molarity"></canvas></div>
+      </div>
+      <div class="formula"><strong>M = n / V</strong>  ·  Dilution: <strong>M₁V₁ = M₂V₂</strong>  ·  Units: mol/L or mol/dm³</div>
+    </section>
+
+    <!-- 14. pH -->
+    <section class="calc-section" id="calc-ph">
+      <div class="metrics">
+        <div class="metric"><div class="metric-label">pH</div><div class="metric-value chem" id="ph-ph">—</div></div>
+        <div class="metric"><div class="metric-label">pOH</div><div class="metric-value" id="ph-poh">—</div></div>
+        <div class="metric"><div class="metric-label">[H⁺] mol/L</div><div class="metric-value" id="ph-h">—</div></div>
+        <div class="metric"><div class="metric-label">Nature</div><div class="metric-value" id="ph-nature">—</div></div>
+      </div>
+      <div class="controls">
+        <div class="control-group">
+          <div class="control-label"><span>pH value</span><span id="ph-pv-val">7.0</span></div>
+          <input type="range" id="ph-pv" min="0" max="14" step="0.1" value="7">
+        </div>
+      </div>
+      <div class="chart-wrap">
+        <div class="chart-title">pH scale</div>
+        <div style="position:relative;height:200px"><canvas id="chart-ph"></canvas></div>
+      </div>
+      <div class="formula"><strong>pH = −log[H⁺]</strong>  ·  <strong>pOH = −log[OH⁻]</strong>  ·  <strong>pH + pOH = 14</strong>  ·  <strong>Kw = [H⁺][OH⁻] = 10⁻¹⁴</strong></div>
+    </section>
+
+    <!-- 15. HALF-LIFE -->
+    <section class="calc-section" id="calc-halflife">
+      <div class="metrics">
+        <div class="metric"><div class="metric-label">Remaining</div><div class="metric-value chem" id="hl-rem">—</div></div>
+        <div class="metric"><div class="metric-label">Decayed</div><div class="metric-value" id="hl-dec">—</div></div>
+        <div class="metric"><div class="metric-label">% Remaining</div><div class="metric-value" id="hl-pct">—</div></div>
+        <div class="metric"><div class="metric-label">Decay constant λ</div><div class="metric-value" id="hl-lam">—</div></div>
+      </div>
+      <div class="controls">
+        <div class="control-group"><div class="control-label"><span>Initial amount (g)</span><span id="hl-n-val">100 g</span></div><input type="range" id="hl-n" min="1" max="1000" step="1" value="100"></div>
+        <div class="control-group"><div class="control-label"><span>Half-life (years)</span><span id="hl-h-val">10 yr</span></div><input type="range" id="hl-h" min="0.1" max="500" step="0.1" value="10"></div>
+        <div class="control-group"><div class="control-label"><span>Elapsed time (years)</span><span id="hl-t-val">20 yr</span></div><input type="range" id="hl-t" min="0" max="500" step="1" value="20"></div>
+      </div>
+      <div class="chart-wrap">
+        <div class="chart-title">Radioactive decay curve</div>
+        <div style="position:relative;height:200px"><canvas id="chart-halflife"></canvas></div>
+      </div>
+      <div class="formula"><strong>N(t) = N₀ × (½)^(t/t½)</strong>  ·  Decay constant: <strong>λ = ln2 / t½</strong>  ·  <strong>N(t) = N₀e^(−λt)</strong></div>
+    </section>
+
+    <!-- 16. POPULATION GROWTH -->
+    <section class="calc-section" id="calc-population">
+      <div class="metrics">
+        <div class="metric"><div class="metric-label">Final Population</div><div class="metric-value bio" id="pop-final">—</div></div>
+        <div class="metric"><div class="metric-label">Growth</div><div class="metric-value bio" id="pop-growth">—</div></div>
+        <div class="metric"><div class="metric-label">Doubling Time</div><div class="metric-value" id="pop-double">—</div></div>
+      </div>
+      <div class="controls">
+        <div class="control-group"><div class="control-label"><span>Initial population</span><span id="pop-n-val">1,000</span></div><input type="range" id="pop-n" min="10" max="1000000" step="10" value="1000"></div>
+        <div class="control-group"><div class="control-label"><span>Growth rate (%/yr)</span><span id="pop-r-val">3%</span></div><input type="range" id="pop-r" min="0.1" max="20" step="0.1" value="3"></div>
+        <div class="control-group"><div class="control-label"><span>Years</span><span id="pop-t-val">50 yrs</span></div><input type="range" id="pop-t" min="1" max="200" step="1" value="50"></div>
+        <div class="control-group"><div class="control-label"><span>Carrying capacity K</span><span id="pop-k-val">off</span></div><input type="range" id="pop-k" min="0" max="10000000" step="1000" value="0"></div>
+      </div>
+      <div class="chart-wrap">
+        <div class="chart-title">Exponential vs logistic growth</div>
+        <div style="position:relative;height:210px"><canvas id="chart-population"></canvas></div>
+      </div>
+      <div class="formula">Exponential: <strong>N(t) = N₀·e^(rt)</strong>  ·  Logistic: <strong>N(t) = K / (1 + ((K−N₀)/N₀)·e^(−rt))</strong></div>
+    </section>
+
+  </div>
+
+  <div class="status-bar">
+    <span><span class="status-dot"></span>all calculations in-browser</span>
+    <span>·</span><span>no data sent anywhere</span>
+    <span>·</span><span>open source · MIT</span>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const r4 = n => +n.toFixed(4);
+const r2 = n => +n.toFixed(2);
+const fmtN = (n, d=3) => parseFloat(n.toPrecision(d)).toString();
+const pct = n => n.toFixed(2) + '%';
+
+const BLUE  = '#2563eb'; const BLUE_A  = 'rgba(37,99,235,0.12)';
+const SKY   = '#0ea5e9'; const SKY_A   = 'rgba(14,165,233,0.12)';
+const PURP  = '#7c3aed'; const PURP_A  = 'rgba(124,58,237,0.12)';
+const GREEN = '#059669'; const GREEN_A = 'rgba(5,150,105,0.12)';
+const RED   = '#dc2626'; const RED_A   = 'rgba(220,38,38,0.12)';
+const GRAY  = '#6b7280'; const GRAY_A  = 'rgba(107,114,128,0.12)';
+
+const charts = {};
+
+function tc() { return document.documentElement.classList.contains('dark') ? '#9ca3af' : '#6b7280'; }
+function gc() { return document.documentElement.classList.contains('dark') ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)'; }
+
+function mkChart(id, cfg) {
+  if (charts[id]) { charts[id].destroy(); delete charts[id]; }
+  const canvas = $(id); if (!canvas) return;
+  const base = {
+    responsive: true, maintainAspectRatio: false, animation: { duration: 180 },
+    plugins: { legend: { display: cfg.legend || false }, tooltip: { callbacks: { label: c => ' ' + (typeof c.raw === 'number' ? r4(c.raw) : c.raw) } } },
+    scales: {
+      x: { ticks: { color: tc(), font: { size: 10, family: "'IBM Plex Mono', monospace" }, maxTicksLimit: 10 }, grid: { color: gc() }, border: { color: gc() } },
+      y: { ticks: { color: tc(), font: { size: 10, family: "'IBM Plex Mono', monospace" }, maxTicksLimit: 8 }, grid: { color: gc() }, border: { color: gc() } }
+    }
+  };
+  const opts = cfg.options || {};
+  if (opts.scales) { if (opts.scales.x) base.scales.x = {...base.scales.x, ...opts.scales.x}; if (opts.scales.y) base.scales.y = {...base.scales.y, ...opts.scales.y}; }
+  charts[id] = new Chart(canvas, { type: cfg.type, data: cfg.data, options: { ...base, ...opts, scales: base.scales } });
+}
+
+function slider(id, outId, fn) {
+  const el = $(id), out = $(outId);
+  if (!el || !out) return;
+  const upd = () => { out.textContent = fn(+el.value); };
+  el.addEventListener('input', upd); upd();
+}
+
+function bind(ids, fn) { ids.forEach(id => { const el=$(id); if(el) el.addEventListener('input', fn); }); }
+
+// ── NAV ─────────────────────────────────────────────────────────────────────
+const navMeta = {
+  quadratic:  ['Math',      'rgba(124,58,237,0.1)',   'var(--math)',  'Quadratic Solver',    'find roots of ax² + bx + c = 0, real and complex'],
+  stats:      ['Math',      'rgba(124,58,237,0.1)',   'var(--math)',  'Statistics',           'mean, median, std dev, variance from any dataset'],
+  geometry:   ['Math',      'rgba(124,58,237,0.1)',   'var(--math)',  'Geometry',             'area, perimeter, volume for any shape'],
+  trig:       ['Math',      'rgba(124,58,237,0.1)',   'var(--math)',  'Trigonometry',         'sin, cos, tan, laws of sines and cosines'],
+  units:      ['Math',      'rgba(124,58,237,0.1)',   'var(--math)',  'Unit Converter',       'length, mass, temp, speed, energy, pressure'],
+  kinematics: ['Physics',   'rgba(2,132,199,0.1)',    'var(--phys)',  'Kinematics',           'displacement, velocity, acceleration, time'],
+  projectile: ['Physics',   'rgba(2,132,199,0.1)',    'var(--phys)',  'Projectile Motion',    'range, max height, flight time, trajectory'],
+  force:      ['Physics',   'rgba(2,132,199,0.1)',    'var(--phys)',  'Force / Newton',       'F=ma, friction, inclined planes'],
+  energy:     ['Physics',   'rgba(2,132,199,0.1)',    'var(--phys)',  'Energy & Work',        'kinetic energy, potential energy, power'],
+  ohm:        ['Physics',   'rgba(2,132,199,0.1)',    'var(--phys)',  "Ohm's Law",            'voltage, current, resistance, power in circuits'],
+  waves:      ['Physics',   'rgba(2,132,199,0.1)',    'var(--phys)',  'Waves',                'frequency, wavelength, period, wave speed'],
+  gas:        ['Physics',   'rgba(2,132,199,0.1)',    'var(--phys)',  'Ideal Gas Law',        'PV = nRT — pressure, volume, temperature, moles'],
+  molarity:   ['Chemistry', 'rgba(5,150,105,0.1)',    'var(--chem)', 'Molarity',             'concentration, moles, volume, dilution (M₁V₁=M₂V₂)'],
+  ph:         ['Chemistry', 'rgba(5,150,105,0.1)',    'var(--chem)', 'pH Calculator',        'pH ↔ [H⁺], pOH, acid/base nature'],
+  halflife:   ['Chemistry', 'rgba(5,150,105,0.1)',    'var(--chem)', 'Half-Life',            'radioactive decay, remaining mass over time'],
+  population: ['Biology',   'rgba(220,38,38,0.1)',    'var(--bio)',  'Population Growth',    'exponential and logistic growth models'],
+};
+
+document.querySelectorAll('.nav-item').forEach(item => {
+  item.addEventListener('click', () => {
+    const calc = item.dataset.calc;
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.querySelectorAll('.calc-section').forEach(s => s.classList.remove('active'));
+    item.classList.add('active');
+    $('calc-' + calc).classList.add('active');
+    const m = navMeta[calc];
+    $('pageBadge').textContent = m[0];
+    $('pageBadge').style.background = m[1];
+    $('pageBadge').style.color = m[2];
+    $('pageTitle').textContent = m[3];
+    $('pageDesc').textContent  = m[4];
+    $('contentArea').scrollTop = 0;
+    calcFns[calc]();
+  });
+});
+
+// ── DARK MODE ────────────────────────────────────────────────────────────────
+let dark = false;
+$('darkToggle').addEventListener('click', () => {
+  dark = !dark;
+  document.documentElement.classList.toggle('dark', dark);
+  $('toggleTrack').classList.toggle('on', dark);
+  Object.keys(charts).forEach(id => { if (charts[id]) { charts[id].destroy(); delete charts[id]; } });
+  const active = document.querySelector('.nav-item.active');
+  if (active) calcFns[active.dataset.calc]();
+});
+
+// ── 1. QUADRATIC ────────────────────────────────────────────────────────────
+function calcQuadratic() {
+  const a = +$('q-a').value, b = +$('q-b').value, c = +$('q-c').value;
+  if (a === 0) { $('q-x1').textContent = 'a ≠ 0'; return; }
+  const disc = b*b - 4*a*c;
+  $('q-disc').textContent = r4(disc);
+  const vx = -b/(2*a), vy = a*vx*vx + b*vx + c;
+  $('q-vertex').textContent = `(${r4(vx)}, ${r4(vy)})`;
+  if (disc >= 0) {
+    const x1 = (-b + Math.sqrt(disc))/(2*a), x2 = (-b - Math.sqrt(disc))/(2*a);
+    $('q-x1').textContent = r4(x1); $('q-x2').textContent = r4(x2);
+  } else {
+    const re = -b/(2*a), im = Math.sqrt(-disc)/(2*a);
+    $('q-x1').textContent = `${r4(re)}+${r4(im)}i`;
+    $('q-x2').textContent = `${r4(re)}−${r4(im)}i`;
+  }
+  const xmin = vx-5, xmax = vx+5, steps = 80;
+  const labels = [], data = [];
+  for (let i = 0; i <= steps; i++) {
+    const x = xmin + (xmax-xmin)*i/steps;
+    labels.push(r2(x)); data.push(r4(a*x*x + b*x + c));
+  }
+  mkChart('chart-quadratic', { type: 'line', data: { labels, datasets: [
+    { data, borderColor: PURP, backgroundColor: PURP_A, fill: true, tension: 0, pointRadius: 0, borderWidth: 2 }
+  ]}});
+}
+bind(['q-a','q-b','q-c'], calcQuadratic);
+
+// ── 2. STATISTICS ────────────────────────────────────────────────────────────
+let statData = [4, 8, 15, 16, 23, 42];
+function calcStats() {
+  if (statData.length === 0) { ['st-mean','st-median','st-std','st-var','st-min','st-max'].forEach(id => $(id).textContent = '—'); return; }
+  const sorted = [...statData].sort((a,b) => a-b);
+  const n = sorted.length, sum = sorted.reduce((a,b)=>a+b,0), mean = sum/n;
+  const median = n%2===0 ? (sorted[n/2-1]+sorted[n/2])/2 : sorted[Math.floor(n/2)];
+  const variance = sorted.reduce((acc,v)=>acc+(v-mean)**2,0)/n;
+  const std = Math.sqrt(variance);
+  const mode = (() => { const freq={}; sorted.forEach(v=>freq[v]=(freq[v]||0)+1); const mx=Math.max(...Object.values(freq)); const modes=Object.keys(freq).filter(k=>freq[k]===mx); return modes.length===n?'none':modes.join(', '); })();
+  $('st-mean').textContent   = r4(mean);
+  $('st-median').textContent = r4(median);
+  $('st-std').textContent    = r4(std);
+  $('st-var').textContent    = r4(variance);
+  $('st-min').textContent    = sorted[0];
+  $('st-max').textContent    = sorted[n-1];
+  $('st-n').textContent      = n;
+  $('st-range').textContent  = r4(sorted[n-1]-sorted[0]);
+  $('st-mode').textContent   = mode;
+  renderChips();
+  mkChart('chart-stats', { type: 'bar', data: {
+    labels: sorted.map(String),
+    datasets: [{ data: sorted, backgroundColor: sorted.map(v => v===median ? PURP : PURP_A), borderColor: PURP, borderWidth: 1.5, borderRadius: 4 }]
+  }, options: { scales: { y: { beginAtZero: true } } }});
+}
+
+function renderChips() {
+  const c = $('st-chips'); c.innerHTML = '';
+  statData.forEach((v,i) => {
+    const chip = document.createElement('div'); chip.className = 'stat-chip';
+    chip.innerHTML = `<span>${v}</span><button onclick="removeStatVal(${i})">×</button>`;
+    c.appendChild(chip);
+  });
+}
+
+window.removeStatVal = function(i) { statData.splice(i,1); calcStats(); };
+
+function addStatVal() {
+  const inp = $('st-input'), v = parseFloat(inp.value);
+  if (!isNaN(v)) { statData.push(v); inp.value = ''; calcStats(); }
+}
+$('st-add').addEventListener('click', addStatVal);
+$('st-input').addEventListener('keydown', e => { if (e.key==='Enter') addStatVal(); });
+$('st-clear').addEventListener('click', () => { statData=[]; calcStats(); });
+
+// ── 3. GEOMETRY ──────────────────────────────────────────────────────────────
+const shapes = {
+  circle:   { fields:[{id:'r',label:'Radius'}], calc(v){const r=v.r;return{l1:'Area',v1:r4(Math.PI*r*r),l2:'Circumference',v2:r4(2*Math.PI*r),l3:'—',v3:'—',formula:'A = πr²  ·  C = 2πr'};} },
+  rect:     { fields:[{id:'w',label:'Width'},{id:'h',label:'Height'}], calc(v){return{l1:'Area',v1:r4(v.w*v.h),l2:'Perimeter',v2:r4(2*(v.w+v.h)),l3:'Diagonal',v3:r4(Math.sqrt(v.w**2+v.h**2)),formula:'A = w×h  ·  P = 2(w+h)  ·  D = √(w²+h²)'};} },
+  triangle: { fields:[{id:'a',label:'Side a'},{id:'b',label:'Side b'},{id:'c',label:'Side c'}], calc(v){const s=(v.a+v.b+v.c)/2,area=Math.sqrt(s*(s-v.a)*(s-v.b)*(s-v.c));return{l1:'Area',v1:r4(area),l2:'Perimeter',v2:r4(v.a+v.b+v.c),l3:'Semi-perim',v3:r4(s),formula:"Heron's: A = √(s(s−a)(s−b)(s−c))  ·  s = (a+b+c)/2"};} },
+  sphere:   { fields:[{id:'r',label:'Radius'}], calc(v){const r=v.r;return{l1:'Volume',v1:r4(4/3*Math.PI*r**3),l2:'Surface Area',v2:r4(4*Math.PI*r**2),l3:'Circumference',v3:r4(2*Math.PI*r),formula:'V = 4πr³/3  ·  A = 4πr²'};} },
+  cylinder: { fields:[{id:'r',label:'Radius'},{id:'h',label:'Height'}], calc(v){return{l1:'Volume',v1:r4(Math.PI*v.r**2*v.h),l2:'Lateral Area',v2:r4(2*Math.PI*v.r*v.h),l3:'Total Surface',v3:r4(2*Math.PI*v.r*(v.r+v.h)),formula:'V = πr²h  ·  Lateral = 2πrh  ·  Total = 2πr(r+h)'};} },
+  cone:     { fields:[{id:'r',label:'Radius'},{id:'h',label:'Height'}], calc(v){const l=Math.sqrt(v.r**2+v.h**2);return{l1:'Volume',v1:r4(Math.PI*v.r**2*v.h/3),l2:'Slant height',v2:r4(l),l3:'Surface Area',v3:r4(Math.PI*v.r*(v.r+l)),formula:'V = πr²h/3  ·  l = √(r²+h²)  ·  A = πr(r+l)'};} },
+  cube:     { fields:[{id:'a',label:'Side length'}], calc(v){return{l1:'Volume',v1:r4(v.a**3),l2:'Surface Area',v2:r4(6*v.a**2),l3:'Diagonal',v3:r4(Math.sqrt(3)*v.a),formula:'V = a³  ·  A = 6a²  ·  Diagonal = a√3'};} },
+};
+let curShape = 'circle';
+
+function renderGeoInputs() {
+  const sh = shapes[curShape];
+  const c = $('geo-inputs'); c.innerHTML = '';
+  sh.fields.forEach(f => {
+    const div = document.createElement('div'); div.className = 'control-group';
+    div.innerHTML = `<div class="control-label"><span>${f.label}</span></div><input type="number" id="geo-${f.id}" value="5" step="any" min="0">`;
+    c.appendChild(div);
+  });
+  sh.fields.forEach(f => { const el=$('geo-'+f.id); if(el) el.addEventListener('input', calcGeometry); });
+  calcGeometry();
+}
+
+function calcGeometry() {
+  const sh = shapes[curShape];
+  const vals = {};
+  let valid = true;
+  sh.fields.forEach(f => { const v=parseFloat(($('geo-'+f.id)||{}).value); if(isNaN(v)||v<0){valid=false;}else{vals[f.id]=v;} });
+  if (!valid) return;
+  const r = sh.calc(vals);
+  $('geo-l1').textContent = r.l1; $('geo-v1').textContent = r.v1;
+  $('geo-l2').textContent = r.l2; $('geo-v2').textContent = r.v2;
+  $('geo-l3').textContent = r.l3; $('geo-v3').textContent = r.v3;
+  $('geo-formula').innerHTML = r.formula;
+}
+
+document.querySelectorAll('.shape-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.shape-tab').forEach(t=>t.classList.remove('active'));
+    tab.classList.add('active');
+    curShape = tab.dataset.shape;
+    renderGeoInputs();
+  });
+});
+
+// ── 4. TRIG ──────────────────────────────────────────────────────────────────
+function calcTrig() {
+  let ang = +$('tr-ang').value;
+  const mode = $('tr-mode').value;
+  const rad = mode === 'deg' ? ang * Math.PI / 180 : ang;
+  $('tr-sin').textContent = r4(Math.sin(rad));
+  $('tr-cos').textContent = r4(Math.cos(rad));
+  const tan = Math.tan(rad);
+  $('tr-tan').textContent = Math.abs(tan) > 1e10 ? '∞' : r4(tan);
+  $('tr-rad').textContent = r4(rad) + ' rad';
+  const labels=[], sinD=[], cosD=[], tanD=[];
+  for (let d=0; d<=360; d+=2) {
+    const r2 = d*Math.PI/180;
+    labels.push(d+'°');
+    sinD.push(r4(Math.sin(r2)));
+    cosD.push(r4(Math.cos(r2)));
+    const t = Math.tan(r2); tanD.push(Math.abs(t)<10 ? r4(t) : null);
+  }
+  mkChart('chart-trig', { type: 'line', legend: true, data: { labels, datasets: [
+    { data: sinD, borderColor: PURP, fill:false, tension:0, pointRadius:0, borderWidth:1.8, label:'sin' },
+    { data: cosD, borderColor: BLUE, fill:false, tension:0, pointRadius:0, borderWidth:1.8, label:'cos' },
+    { data: tanD, borderColor: GREEN, fill:false, tension:0, pointRadius:0, borderWidth:1.2, label:'tan', spanGaps:false },
+  ]}, options: { scales: { y: { min:-2, max:2 } } }});
+}
+slider('tr-ang','tr-ang-val', v => v+'°');
+bind(['tr-ang','tr-mode'], calcTrig);
+
+// ── 5. UNIT CONVERTER ────────────────────────────────────────────────────────
+const unitDefs = {
+  length:   { units: ['meter','kilometer','centimeter','millimeter','inch','foot','yard','mile','nautical mile'], toBase: [1,1000,0.01,0.001,0.0254,0.3048,0.9144,1609.344,1852] },
+  mass:     { units: ['kilogram','gram','milligram','pound','ounce','tonne','stone'], toBase: [1,0.001,0.000001,0.453592,0.0283495,1000,6.35029] },
+  temp:     { units: ['Celsius','Fahrenheit','Kelvin'], toBase: null },
+  speed:    { units: ['m/s','km/h','mph','knots','ft/s'], toBase: [1,0.27778,0.44704,0.514444,0.3048] },
+  energy:   { units: ['joule','kilojoule','calorie','kcal','kWh','BTU','eV'], toBase: [1,1000,4.184,4184,3600000,1055.06,1.60218e-19] },
+  pressure: { units: ['pascal','kPa','MPa','bar','atm','psi','mmHg'], toBase: [1,1000,1000000,100000,101325,6894.76,133.322] },
+};
+let curUtype = 'length';
+
+function populateUnitSelects() {
+  const def = unitDefs[curUtype];
+  ['uc-from','uc-to'].forEach((id,i) => {
+    const sel = $(id); sel.innerHTML = '';
+    def.units.forEach((u,j) => { const opt=document.createElement('option'); opt.value=j; opt.textContent=u; sel.appendChild(opt); });
+    sel.value = i===1 ? 1 : 0;
+  });
+  calcUnits();
+}
+
+function convertTemp(val, fromIdx, toIdx) {
+  let c;
+  if (fromIdx===0) c=val;
+  else if (fromIdx===1) c=(val-32)*5/9;
+  else c=val-273.15;
+  if (toIdx===0) return c;
+  if (toIdx===1) return c*9/5+32;
+  return c+273.15;
+}
+
+function calcUnits() {
+  const def = unitDefs[curUtype];
+  const val = +$('uc-val').value, fi = +$('uc-from').value, ti = +$('uc-to').value;
+  let result;
+  if (curUtype === 'temp') {
+    result = convertTemp(val, fi, ti);
+  } else {
+    result = val * def.toBase[fi] / def.toBase[ti];
+  }
+  $('uc-result').textContent = `${val} ${def.units[fi]} = ${r4(result)} ${def.units[ti]}`;
+  const labels=[], data=[];
+  const testVals = [0.1,0.5,1,2,5,10,50,100];
+  testVals.forEach(tv => {
+    labels.push(tv + ' ' + def.units[fi].slice(0,4));
+    data.push(curUtype==='temp' ? r4(convertTemp(tv,fi,ti)) : r4(tv*def.toBase[fi]/def.toBase[ti]));
+  });
+  mkChart('chart-units', { type: 'bar', data: { labels, datasets: [
+    { data, backgroundColor: BLUE_A, borderColor: BLUE, borderWidth: 1.5, borderRadius: 5 }
+  ]}, options: { scales: { y: { ticks: { callback: v => r4(v) } } } }});
+}
+
+document.querySelectorAll('.unit-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.unit-tab').forEach(t=>t.classList.remove('active'));
+    tab.classList.add('active');
+    curUtype = tab.dataset.utype;
+    populateUnitSelects();
+  });
+});
+['uc-val','uc-from','uc-to'].forEach(id => { const el=$(id); if(el) el.addEventListener('input', calcUnits); });
+bind(['uc-val','uc-from','uc-to'], calcUnits);
+
+// ── 6. KINEMATICS ────────────────────────────────────────────────────────────
+function calcKinematics() {
+  const u=+$('kin-u').value, a=+$('kin-a').value, t=+$('kin-t').value;
+  const s = u*t + 0.5*a*t*t, v = u + a*t;
+  $('kin-s').textContent = r4(s) + ' m';
+  $('kin-v').textContent = r4(v) + ' m/s';
+  $('kin-t').textContent = t + ' s';
+  const labels=[], data=[], steps=40;
+  for (let i=0; i<=steps; i++) {
+    const ti=t*i/steps; labels.push(r2(ti)+'s'); data.push(r4(u*ti+0.5*a*ti*ti));
+  }
+  mkChart('chart-kinematics', { type: 'line', data: { labels, datasets: [
+    { data, borderColor: SKY, backgroundColor: SKY_A, fill:true, tension:0.3, pointRadius:0, borderWidth:2 }
+  ]}});
+}
+slider('kin-u','kin-u-val',v=>v+' m/s');
+slider('kin-a','kin-a-val',v=>v+' m/s²');
+slider('kin-t','kin-t-val',v=>v+' s');
+bind(['kin-u','kin-a','kin-t'], calcKinematics);
+
+// ── 7. PROJECTILE ────────────────────────────────────────────────────────────
+function calcProjectile() {
+  const v=+$('pr-v').value, ang=+$('pr-ang').value, g=+$('pr-g').value;
+  const th=ang*Math.PI/180;
+  const R=v*v*Math.sin(2*th)/g, H=v*v*Math.sin(th)**2/(2*g), T=2*v*Math.sin(th)/g;
+  $('pr-range').textContent  = r4(R) + ' m';
+  $('pr-height').textContent = r4(H) + ' m';
+  $('pr-time').textContent   = r4(T) + ' s';
+  const vx=v*Math.cos(th), vy=v*Math.sin(th), steps=60;
+  const labels=[], data=[];
+  for (let i=0; i<=steps; i++) {
+    const t=T*i/steps, x=vx*t, y=vy*t-0.5*g*t*t;
+    if(y>=0){ labels.push(r2(x)+'m'); data.push(r4(y)); }
+  }
+  mkChart('chart-projectile', { type: 'line', data: { labels, datasets: [
+    { data, borderColor: SKY, backgroundColor: SKY_A, fill:true, tension:0.4, pointRadius:0, borderWidth:2 }
+  ]}});
+}
+slider('pr-v',  'pr-v-val',   v=>v+' m/s');
+slider('pr-ang','pr-ang-val', v=>v+'°');
+slider('pr-g',  'pr-g-val',   v=>v+' m/s²');
+bind(['pr-v','pr-ang','pr-g'], calcProjectile);
+
+// ── 8. FORCE ─────────────────────────────────────────────────────────────────
+function calcForce() {
+  const m=+$('fo-m').value, fa=+$('fo-fa').value, mu=+$('fo-mu').value, ang=+$('fo-ang').value;
+  const th=ang*Math.PI/180, g=9.81;
+  const N=m*g*Math.cos(th), ff=mu*N, fGrav=m*g*Math.sin(th);
+  const fNet=fa-ff-fGrav, acc=fNet/m;
+  $('fo-f').textContent  = r4(fNet) + ' N';
+  $('fo-a').textContent  = r4(acc) + ' m/s²';
+  $('fo-ff').textContent = r4(ff) + ' N';
+  const masses=[], fNets=[], labels=[];
+  for (let i=1; i<=20; i++) {
+    const mi=m*i/10, Ni=mi*g*Math.cos(th), ffi=mu*Ni, fGi=mi*g*Math.sin(th);
+    masses.push(mi); labels.push(r2(mi)+'kg'); fNets.push(r4(fa-ffi-fGi));
+  }
+  mkChart('chart-force', { type: 'line', data: { labels, datasets: [
+    { data: fNets, borderColor: SKY, backgroundColor: SKY_A, fill:true, tension:0.3, pointRadius:0, borderWidth:2 }
+  ]}});
+}
+slider('fo-m',  'fo-m-val',   v=>v+' kg');
+slider('fo-fa', 'fo-fa-val',  v=>v+' N');
+slider('fo-mu', 'fo-mu-val',  v=>(+v).toFixed(2));
+slider('fo-ang','fo-ang-val', v=>v+'°');
+bind(['fo-m','fo-fa','fo-mu','fo-ang'], calcForce);
+
+// ── 9. ENERGY ────────────────────────────────────────────────────────────────
+function calcEnergy() {
+  const m=+$('en-m').value, v=+$('en-v').value, h=+$('en-h').value, t=+$('en-t').value, g=9.81;
+  const ke=0.5*m*v*v, pe=m*g*h, w=pe, p=w/t;
+  $('en-ke').textContent = r4(ke)+' J';
+  $('en-pe').textContent = r4(pe)+' J';
+  $('en-w').textContent  = r4(w)+' J';
+  $('en-p').textContent  = r4(p)+' W';
+  const labels=[], keD=[], peD=[];
+  for (let hi=0; hi<=h; hi+=Math.max(h/20,0.01)) {
+    labels.push(r2(hi)+'m');
+    keD.push(r4(0.5*m*v*v));
+    peD.push(r4(m*g*hi));
+  }
+  mkChart('chart-energy', { type: 'line', legend:true, data: { labels, datasets: [
+    { data: keD, borderColor: SKY,  fill:false, tension:0, pointRadius:0, borderWidth:2, label:'KE (J)' },
+    { data: peD, borderColor: PURP, fill:false, tension:0, pointRadius:0, borderWidth:2, label:'PE (J)' },
+  ]}});
+}
+slider('en-m','en-m-val',v=>v+' kg');
+slider('en-v','en-v-val',v=>v+' m/s');
+slider('en-h','en-h-val',v=>v+' m');
+slider('en-t','en-t-val',v=>v+' s');
+bind(['en-m','en-v','en-h','en-t'], calcEnergy);
+
+// ── 10. OHM ──────────────────────────────────────────────────────────────────
+function calcOhm() {
+  const V=+$('oh-vv').value, R=+$('oh-rv').value;
+  const I=V/R, P=V*I;
+  $('oh-v').textContent = r4(V)+' V';
+  $('oh-i').textContent = r4(I)+' A';
+  $('oh-r').textContent = r4(R)+' Ω';
+  $('oh-p').textContent = r4(P)+' W';
+  const labels=[], data=[];
+  for (let r=1; r<=R*2; r+=Math.max(R/20,0.1)) {
+    labels.push(r2(r)+'Ω'); data.push(r4(V/r));
+  }
+  mkChart('chart-ohm', { type: 'line', data: { labels, datasets: [
+    { data, borderColor: SKY, backgroundColor: SKY_A, fill:true, tension:0.3, pointRadius:0, borderWidth:2 }
+  ]}, options: { scales: { y: { ticks: { callback: v=>r4(v)+'A' } } } }});
+}
+slider('oh-vv','oh-v-val',v=>v+' V');
+slider('oh-rv','oh-r-val',v=>v+' Ω');
+bind(['oh-vv','oh-rv'], calcOhm);
+
+// ── 11. WAVES ────────────────────────────────────────────────────────────────
+function calcWaves() {
+  const f=+$('wv-fv').value, spd=+$('wv-sv').value, A=+$('wv-av').value;
+  const lam=spd/f, T=1/f;
+  $('wv-f').textContent   = f>1000 ? (f/1000).toFixed(2)+' kHz' : f+' Hz';
+  $('wv-lam').textContent = r4(lam)+' m';
+  $('wv-T').textContent   = r4(T)+' s';
+  $('wv-spd').textContent = spd+' m/s';
+  const steps=80, labels=[], data=[];
+  for (let i=0; i<=steps; i++) {
+    const x=lam*2*i/steps; labels.push(r2(x)+'m'); data.push(r4(A*Math.sin(2*Math.PI*x/lam)));
+  }
+  mkChart('chart-waves', { type: 'line', data: { labels, datasets: [
+    { data, borderColor: SKY, backgroundColor: SKY_A, fill:true, tension:0, pointRadius:0, borderWidth:2 }
+  ]}, options: { scales: { y: { min:-3, max:3 } } }});
+}
+slider('wv-fv','wv-f-val', v=>v>1000?(v/1000).toFixed(1)+'kHz':v+' Hz');
+slider('wv-sv','wv-s-val', v=>v+' m/s');
+slider('wv-av','wv-a-val', v=>(+v).toFixed(1));
+bind(['wv-fv','wv-sv','wv-av'], calcWaves);
+
+// ── 12. IDEAL GAS ────────────────────────────────────────────────────────────
+function calcGas() {
+  const P=+$('gas-pv').value*1000, V=+$('gas-vv').value/1000, n=+$('gas-nv').value, R=8.314;
+  const T=P*V/(n*R);
+  $('gas-p').textContent = r4(P)+' Pa';
+  $('gas-v').textContent = r4(V)+' m³';
+  $('gas-t').textContent = r4(T)+' K ('+r4(T-273.15)+'°C)';
+  $('gas-n').textContent = r4(n)+' mol';
+  const labels=[], data=[];
+  for (let vi=1; vi<=50; vi++) {
+    const vj=vi/1000*$('gas-vv').value; labels.push(r2(vj)+'L'); data.push(r4(n*R*T/(vj/1000)));
+  }
+  mkChart('chart-gas', { type: 'line', data: { labels, datasets: [
+    { data, borderColor: SKY, backgroundColor: SKY_A, fill:true, tension:0.4, pointRadius:0, borderWidth:2 }
+  ]}, options: { scales: { y: { ticks: { callback: v=>r4(v/1000)+'kPa' } } } }});
+}
+slider('gas-pv','gas-pv-val',v=>v+' kPa');
+slider('gas-vv','gas-vv-val',v=>v+' L');
+slider('gas-nv','gas-nv-val',v=>v+' mol');
+bind(['gas-pv','gas-vv','gas-nv'], calcGas);
+
+// ── 13. MOLARITY ─────────────────────────────────────────────────────────────
+function calcMolarity() {
+  const n=+$('mol-nv').value, V=+$('mol-vv').value, dv=+$('mol-dv').value;
+  const M=n/V, dil=M*V/dv;
+  $('mol-m').textContent = r4(M)+' M';
+  $('mol-n').textContent = r4(n)+' mol';
+  $('mol-dil').textContent = r4(dil)+' M';
+  const labels=[], data=[];
+  for (let vi=0.1; vi<=V*3; vi+=V*3/20) {
+    labels.push(r2(vi)+'L'); data.push(r4(n/vi));
+  }
+  mkChart('chart-molarity', { type: 'line', data: { labels, datasets: [
+    { data, borderColor: GREEN, backgroundColor: GREEN_A, fill:true, tension:0.4, pointRadius:0, borderWidth:2 }
+  ]}, options: { scales: { y: { ticks: { callback: v=>r4(v)+'M' } } } }});
+}
+slider('mol-nv','mol-nv-val',v=>v+' mol');
+slider('mol-vv','mol-vv-val',v=>v+' L');
+slider('mol-dv','mol-dv-val',v=>v+' L');
+bind(['mol-nv','mol-vv','mol-dv'], calcMolarity);
+
+// ── 14. pH ───────────────────────────────────────────────────────────────────
+function calcPh() {
+  const ph=+$('ph-pv').value;
+  const H=Math.pow(10,-ph), pOH=14-ph, OH=Math.pow(10,-pOH);
+  $('ph-ph').textContent     = ph.toFixed(1);
+  $('ph-poh').textContent    = pOH.toFixed(1);
+  $('ph-h').textContent      = H.toExponential(2);
+  $('ph-nature').textContent = ph<7?'Acidic':ph>7?'Basic':'Neutral';
+  $('ph-nature').className   = 'metric-value '+(ph<7?'danger':ph>7?'chem':'');
+  const labels=[], data=[], colors=[];
+  for (let p=0; p<=14; p+=0.5) {
+    labels.push(p.toFixed(1));
+    data.push(1);
+    colors.push(p<3?'#ef4444':p<7?'#f97316':p===7?'#22c55e':p<11?'#3b82f6':'#8b5cf6');
+  }
+  mkChart('chart-ph', { type: 'bar', data: { labels, datasets: [
+    { data, backgroundColor: colors, borderWidth: 0, borderRadius: 3 }
+  ]}, options: { scales: { y: { display:false }, x: { ticks: { maxTicksLimit:15 } } },
+    plugins: { tooltip: { callbacks: { label: c => 'pH '+c.label } } } }});
+}
+slider('ph-pv','ph-pv-val',v=>(+v).toFixed(1));
+$('ph-pv').addEventListener('input', calcPh);
+
+// ── 15. HALF-LIFE ────────────────────────────────────────────────────────────
+function calcHalflife() {
+  const N0=+$('hl-n').value, t12=+$('hl-h').value, t=+$('hl-t').value;
+  const lam=Math.LN2/t12, rem=N0*Math.pow(0.5,t/t12);
+  $('hl-rem').textContent = r4(rem)+' g';
+  $('hl-dec').textContent = r4(N0-rem)+' g';
+  $('hl-pct').textContent = r4(rem/N0*100)+'%';
+  $('hl-lam').textContent = r4(lam)+' yr⁻¹';
+  const steps=50, tmax=t12*5, labels=[], data=[];
+  for (let i=0; i<=steps; i++) {
+    const ti=tmax*i/steps; labels.push(r2(ti)+'yr'); data.push(r4(N0*Math.pow(0.5,ti/t12)));
+  }
+  mkChart('chart-halflife', { type: 'line', data: { labels, datasets: [
+    { data, borderColor: GREEN, backgroundColor: GREEN_A, fill:true, tension:0.3, pointRadius:0, borderWidth:2 }
+  ]}});
+}
+slider('hl-n','hl-n-val',v=>v+' g');
+slider('hl-h','hl-h-val',v=>v+' yr');
+slider('hl-t','hl-t-val',v=>v+' yr');
+bind(['hl-n','hl-h','hl-t'], calcHalflife);
+
+// ── 16. POPULATION ───────────────────────────────────────────────────────────
+function calcPopulation() {
+  const N0=+$('pop-n').value, r=+$('pop-r').value/100, t=+$('pop-t').value, K=+$('pop-k').value;
+  const expFinal = N0*Math.exp(r*t);
+  const logFinal = K>0 ? K/(1+((K-N0)/N0)*Math.exp(-r*t)) : expFinal;
+  const doubling = Math.LN2/r;
+  $('pop-final').textContent  = Math.round(logFinal).toLocaleString();
+  $('pop-growth').textContent = '+'+Math.round(logFinal-N0).toLocaleString();
+  $('pop-double').textContent = r4(doubling)+' yrs';
+  const steps=50, labels=[], expD=[], logD=[];
+  for (let i=0; i<=steps; i++) {
+    const ti=t*i/steps; labels.push(r2(ti)+'yr');
+    expD.push(Math.round(N0*Math.exp(r*ti)));
+    if(K>0) logD.push(Math.round(K/(1+((K-N0)/N0)*Math.exp(-r*ti))));
+  }
+  const datasets = [{ data:expD, borderColor:RED, fill:false, tension:0.3, pointRadius:0, borderWidth:2, label:'Exponential' }];
+  if (K>0) datasets.push({ data:logD, borderColor:GREEN, fill:false, tension:0.3, pointRadius:0, borderWidth:2, label:'Logistic' });
+  mkChart('chart-population', { type:'line', legend:K>0, data: { labels, datasets }, options: { scales: { y: { ticks: { callback: v=>v.toLocaleString() } } } }});
+}
+slider('pop-n','pop-n-val',v=>(+v).toLocaleString());
+slider('pop-r','pop-r-val',v=>v+'%');
+slider('pop-t','pop-t-val',v=>v+' yrs');
+slider('pop-k','pop-k-val',v=>+v>0?(+v).toLocaleString():'off');
+bind(['pop-n','pop-r','pop-t','pop-k'], calcPopulation);
+
+// ── INIT ─────────────────────────────────────────────────────────────────────
+const calcFns = {
+  quadratic: calcQuadratic, stats: calcStats, geometry: renderGeoInputs, trig: calcTrig,
+  units: () => populateUnitSelects(), kinematics: calcKinematics, projectile: calcProjectile,
+  force: calcForce, energy: calcEnergy, ohm: calcOhm, waves: calcWaves, gas: calcGas,
+  molarity: calcMolarity, ph: calcPh, halflife: calcHalflife, population: calcPopulation,
+};
+calcQuadratic();
+renderChips(); calcStats();
+renderGeoInputs();
+</script>
+</body>
+</html>
