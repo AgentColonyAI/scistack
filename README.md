@@ -1,3 +1,5 @@
+![2026-03-16_23-21-39](https://github.com/user-attachments/assets/6bdc3e4d-17b8-445c-8569-fc966be00809)
+
 # SciStack
 
 16 interactive scientific calculators in a single HTML file. No build step, no dependencies, no data leaves your browser.
