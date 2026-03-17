@@ -2,7 +2,7 @@
 
 16 interactive scientific calculators in a single HTML file. No build step, no dependencies, no data leaves your browser.
 
-**[Live Demo](https://yourusername.github.io/scistack)**
+**[Live Demo](https://AgentColonyAI.github.io/scistack)**
 
 ---
 
@@ -20,7 +20,7 @@
 Open `index.html` in any browser. No install required.
 
 ```bash
-git clone https://github.com/yourusername/scistack
+git clone https://github.com/AgentColonyAI/scistack
 open scistack/index.html
 ```
 
@@ -29,7 +29,7 @@ open scistack/index.html
 1. Fork this repo
 2. Go to **Settings → Pages**
 3. Set source: **Deploy from branch → main → / (root)**
-4. Live at `https://yourusername.github.io/scistack`
+4. Live at `https://AgentColonyAI.github.io/scistack`
 
 ## Deploy to Netlify
 
@@ -62,7 +62,7 @@ npm i -g vercel && vercel --yes
 
 ## Companion Project
 
-Check out [CalcStack](https://github.com/yourusername/calcstack) — 12 financial calculators, same single-file approach.
+Check out [CalcStack](https://github.com/AgentColonyAI/calcstack) — 12 financial calculators, same single-file approach.
 
 ## License
 
