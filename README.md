@@ -2,7 +2,7 @@
 
 16 interactive scientific calculators in a single HTML file. No build step, no dependencies, no data leaves your browser.
 
-**[Live Demo](https://AgentColonyAI.github.io/scistack)**
+**[Live Demo](https://agentcolonyai.github.io/scistack/)**
 
 ---
 
@@ -29,7 +29,7 @@ open scistack/index.html
 1. Fork this repo
 2. Go to **Settings → Pages**
 3. Set source: **Deploy from branch → main → / (root)**
-4. Live at `https://AgentColonyAI.github.io/scistack`
+4. Live at `https://agentcolonyai.github.io/scistack/`
 
 ## Deploy to Netlify
 
